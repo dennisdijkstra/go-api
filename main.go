@@ -1,7 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"net/http"
+	"github.com/dennisdijkstra/go/server"
+)
 
 func main() {
-    fmt.Println("Hello, World!")
+	http.HandleFunc("/get", server.HandleGet)
+	http.HandleFunc("/post", server.HandlePost)
+
+	httpServer := &http.Server{
+		Addr: ":8080",
+	}
+	httpServer.ListenAndServe()
 }
