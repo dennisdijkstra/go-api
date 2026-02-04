@@ -6,11 +6,14 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/get", server.HandleGet)
-	http.HandleFunc("/post", server.HandlePost)
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/get", server.HandleGet)
+	mux.HandleFunc("/post", server.HandlePost)
 
 	httpServer := &http.Server{
 		Addr: ":8080",
+		Handler: mux,
 	}
 	httpServer.ListenAndServe()
 }
