@@ -8,10 +8,17 @@ import (
 func main() {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", server.HandleRoot)
 	mux.HandleFunc("/get", server.HandleGet)
 	mux.HandleFunc("/post", server.HandlePost)
-	mux.HandleFunc("/healthz", server.HandleHealthz)
+
+	fs := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
+	mux.Handle("/app/", fs)
+
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
 
 	httpServer := &http.Server{
 		Addr: ":8080",
