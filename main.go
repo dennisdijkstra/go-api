@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"encoding/json"
 	"log"
+	"strings"
 )
 
 type apiConfig struct {
@@ -22,7 +23,7 @@ type responseError struct {
 }
 
 type responseSuccess struct {
-	Valid bool `json:"valid"`
+	CleanedBody string `json:"cleaned_body"`
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -82,7 +83,32 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(data)
 }
 
-func ValidateChirp(w http.ResponseWriter, req *http.Request) {
+func cleanMessage(message string) string {
+	profanities := []string{"kerfuffle", "sharbert", "fornax"}
+	words := strings.Split(message, " ")
+	cleanedMessage := make([]string, 0, len(words))
+	
+	for _, word := range words {
+		isProfane := false
+
+		for _, profanity := range profanities {
+			if strings.ToLower(word) == profanity {
+				isProfane = true
+				break
+			}
+		}
+
+		if isProfane {
+			cleanedMessage = append(cleanedMessage, "****")
+		} else {
+			cleanedMessage = append(cleanedMessage, word)
+		}
+	}
+
+	return strings.Join(cleanedMessage, " ")
+}
+
+func validateChirp(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
@@ -98,8 +124,9 @@ func ValidateChirp(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	cleanedMessage := cleanMessage(params.Body)
 	body := responseSuccess{
-		Valid: true,
+		CleanedBody: cleanedMessage,
 	}
 	respondWithJSON(w, 200, body)
 }
@@ -120,7 +147,7 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	mux.HandleFunc("POST /api/validate_chirp", ValidateChirp)
+	mux.HandleFunc("POST /api/validate_chirp", validateChirp)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.writeMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetMetrics)
