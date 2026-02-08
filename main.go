@@ -8,10 +8,16 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
+	"github.com/joho/godotenv"
+	"database/sql"
+	"os"
+	"github.com/dennisdijkstra/go/internal/database"
+	_ "github.com/lib/pq"
 )
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	db *database.Queries
 }
 
 type parameters struct {
@@ -132,7 +138,25 @@ func validateChirp(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	apiCfg := &apiConfig{}
+	godotenv.Load()
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+        log.Fatal("DB_URL must be set")
+    }
+
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %s", err)
+	}
+	defer db.Close()
+
+	dbQueries := database.New(db)
+
+
+	apiCfg := &apiConfig{
+		fileserverHits: atomic.Int32{},
+		db: dbQueries,
+	}
 	mux := http.NewServeMux()
 
 	fs := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
