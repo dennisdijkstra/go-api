@@ -20,6 +20,7 @@ import (
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	db *database.Queries
+	environment string
 }
 
 type ChirpParams struct {
@@ -66,8 +67,21 @@ func (cfg *apiConfig) writeMetrics(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(template))
 }
 
-func (cfg *apiConfig) resetMetrics(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) resetAll(w http.ResponseWriter, req *http.Request) {
+	if cfg.environment != "dev" {
+		respondWithError(w, 403, "Forbidden")
+		return
+	}
+	
 	cfg.fileserverHits.Store(0)
+	err := cfg.db.DeleteUsers(req.Context())
+	if err != nil {
+		respondWithError(w, 500, "Something went wrong while resetting the database")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Metrics and database reset successfully"))
 }
 
 func marshalError(w http.ResponseWriter, err error) {
@@ -178,6 +192,8 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
+	environment := os.Getenv("ENVIRONMENT")
+
 	if dbURL == "" {
         log.Fatal("DB_URL must be set")
     }
@@ -194,6 +210,7 @@ func main() {
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
 		db: dbQueries,
+		environment: environment,
 	}
 	mux := http.NewServeMux()
 
@@ -213,7 +230,7 @@ func main() {
 	mux.HandleFunc("POST /api/users", apiCfg.createUser)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.writeMetrics)
-	mux.HandleFunc("POST /admin/reset", apiCfg.resetMetrics)
+	mux.HandleFunc("POST /admin/reset", apiCfg.resetAll)
 
 	httpServer := &http.Server{
 		Addr: ":8080",
