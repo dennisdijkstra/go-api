@@ -188,6 +188,55 @@ func (cfg *apiConfig) createChirp(w http.ResponseWriter, req *http.Request) {
 	respondWithJSON(w, 201, body)
 }
 
+func (cfg *apiConfig) getChirps(w http.ResponseWriter, req *http.Request) {
+	chirps, err := cfg.db.GetChirps(req.Context())
+	if err != nil {
+		respondWithError(w, 500, "Something went wrong while fetching chirps")
+		return
+	}
+
+	response := make([]Chirp, 0, len(chirps))
+	for _, chirp := range chirps {
+		response = append(response, Chirp{
+			ID: chirp.ID,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body: chirp.Body,
+			UserID: chirp.UserID,
+		})
+	}
+
+	respondWithJSON(w, 200, response)
+}
+
+func (cfg *apiConfig) getChirpByID(w http.ResponseWriter, req *http.Request) {
+	chirpID := req.PathValue("chirpID")
+	if chirpID == "" {
+		respondWithError(w, 400, "Chirp ID is required")
+		return
+	}
+
+	chirp, err := cfg.db.GetChirpByID(req.Context(), uuid.MustParse(chirpID))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			respondWithError(w, 404, "Chirp not found")
+			return
+		}
+		respondWithError(w, 500, "Something went wrong while fetching the chirp")
+		return
+	}
+
+	body := Chirp{
+		ID: chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body: chirp.Body,
+		UserID: chirp.UserID,
+	}
+
+	respondWithJSON(w, 200, body)
+}
+
 func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	params := UserParams{}
@@ -201,6 +250,7 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 	user, err := cfg.db.CreateUser(req.Context(), params.Email)
 	if err != nil {
 		respondWithError(w, 500, "Something went wrong while creating the user")
+		return
 	}
 	
 	body := User{
@@ -250,7 +300,10 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
+	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirpByID)
+	mux.HandleFunc("GET /api/chirps", apiCfg.getChirps)
 	mux.HandleFunc("POST /api/chirps", apiCfg.createChirp)
+
 	mux.HandleFunc("POST /api/users", apiCfg.createUser)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.writeMetrics)
