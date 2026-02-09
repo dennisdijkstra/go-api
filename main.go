@@ -13,6 +13,8 @@ import (
 	"os"
 	"github.com/dennisdijkstra/go/internal/database"
 	_ "github.com/lib/pq"
+	"time"
+	"github.com/google/uuid"
 )
 
 type apiConfig struct {
@@ -22,6 +24,17 @@ type apiConfig struct {
 
 type parameters struct {
 	Body string `json:"body"`
+}
+
+type userRequest struct {
+	Email string `json:"email"`
+}
+
+type userResponse struct {
+	ID uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Email string `json:"email"`
 }
 
 type responseError struct {
@@ -137,6 +150,31 @@ func validateChirp(w http.ResponseWriter, req *http.Request) {
 	respondWithJSON(w, 200, body)
 }
 
+func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
+	decoder := json.NewDecoder(req.Body)
+	params := userRequest{}
+	err := decoder.Decode(&params)
+
+	if err != nil {
+		respondWithError(w, 400, "Something went wrong")
+		return
+	}
+
+	user, err := cfg.db.CreateUser(req.Context(), params.Email)
+	if err != nil {
+		respondWithError(w, 400, "Something went wrong while creating the user")
+	}
+	
+	body := userResponse{
+		ID: user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		Email: user.Email,
+	}
+
+	respondWithJSON(w, 201, body)
+}
+
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
@@ -172,6 +210,7 @@ func main() {
 	})
 
 	mux.HandleFunc("POST /api/validate_chirp", validateChirp)
+	mux.HandleFunc("POST /api/users", apiCfg.createUser)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.writeMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetMetrics)
