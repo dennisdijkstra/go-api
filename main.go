@@ -22,26 +22,26 @@ type apiConfig struct {
 	db *database.Queries
 }
 
-type parameters struct {
+type ChirpParams struct {
 	Body string `json:"body"`
 }
 
-type userRequest struct {
+type UserParams struct {
 	Email string `json:"email"`
 }
 
-type userResponse struct {
+type User struct {
 	ID uuid.UUID `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email string `json:"email"`
 }
 
-type responseError struct {
+type ResponseError struct {
 	Error string `json:"error"`
 }
 
-type responseSuccess struct {
+type ResponseSuccess struct {
 	CleanedBody string `json:"cleaned_body"`
 }
 
@@ -78,7 +78,7 @@ func marshalError(w http.ResponseWriter, err error) {
 }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
-	resp := responseError{Error: msg}
+	resp := ResponseError{Error: msg}
 	data, err := json.Marshal(resp)
 
 	if err != nil {
@@ -129,7 +129,7 @@ func cleanMessage(message string) string {
 
 func validateChirp(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
-	params := parameters{}
+	params := ChirpParams{}
 	err := decoder.Decode(&params)
 
 	if err != nil {
@@ -144,7 +144,7 @@ func validateChirp(w http.ResponseWriter, req *http.Request) {
 	}
 
 	cleanedMessage := cleanMessage(params.Body)
-	body := responseSuccess{
+	body := ResponseSuccess{
 		CleanedBody: cleanedMessage,
 	}
 	respondWithJSON(w, 200, body)
@@ -152,7 +152,7 @@ func validateChirp(w http.ResponseWriter, req *http.Request) {
 
 func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
-	params := userRequest{}
+	params := UserParams{}
 	err := decoder.Decode(&params)
 
 	if err != nil {
@@ -165,7 +165,7 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 		respondWithError(w, 400, "Something went wrong while creating the user")
 	}
 	
-	body := userResponse{
+	body := User{
 		ID: user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
