@@ -25,6 +25,15 @@ type apiConfig struct {
 
 type ChirpParams struct {
 	Body string `json:"body"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+type Chirp struct {
+	ID uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Body string `json:"body"`
+	UserID uuid.UUID `json:"user_id"`
 }
 
 type UserParams struct {
@@ -141,7 +150,7 @@ func cleanMessage(message string) string {
 	return strings.Join(cleanedMessage, " ")
 }
 
-func validateChirp(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) createChirp(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	params := ChirpParams{}
 	err := decoder.Decode(&params)
@@ -158,10 +167,25 @@ func validateChirp(w http.ResponseWriter, req *http.Request) {
 	}
 
 	cleanedMessage := cleanMessage(params.Body)
-	body := ResponseSuccess{
-		CleanedBody: cleanedMessage,
+	chirp, err := cfg.db.CreateChirp(req.Context(), database.CreateChirpParams{
+		Body: cleanedMessage,
+		UserID: params.UserID,
+	})
+
+	if err != nil {
+		respondWithError(w, 500, "Something went wrong while creating the chirp")	
+		return
 	}
-	respondWithJSON(w, 200, body)
+
+	body := Chirp{
+		ID: chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body: chirp.Body,
+		UserID: chirp.UserID,
+	}
+
+	respondWithJSON(w, 201, body)
 }
 
 func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
@@ -176,7 +200,7 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 
 	user, err := cfg.db.CreateUser(req.Context(), params.Email)
 	if err != nil {
-		respondWithError(w, 400, "Something went wrong while creating the user")
+		respondWithError(w, 500, "Something went wrong while creating the user")
 	}
 	
 	body := User{
@@ -226,7 +250,7 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	mux.HandleFunc("POST /api/validate_chirp", validateChirp)
+	mux.HandleFunc("POST /api/chirps", apiCfg.createChirp)
 	mux.HandleFunc("POST /api/users", apiCfg.createUser)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.writeMetrics)
