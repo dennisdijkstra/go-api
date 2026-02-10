@@ -274,6 +274,47 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 	respondWithJSON(w, 201, body)
 }
 
+func (cfg *apiConfig) loginUser(w http.ResponseWriter, req *http.Request) {
+	decoder := json.NewDecoder(req.Body)
+	params := UserParams{}
+	err := decoder.Decode(&params)
+
+	if err != nil {
+		respondWithError(w, 400, "Something went wrong")
+		return
+	}
+
+	user, err := cfg.db.GetUserByEmail(req.Context(), params.Email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			respondWithError(w, 401, "Incorrect email or password")
+			return
+		}
+		respondWithError(w, 500, "Something went wrong while fetching the user")
+		return
+	}
+
+	isValid, err := auth.CheckPasswordHash(params.Password, user.HashedPassword)
+	if err != nil {
+		respondWithError(w, 500, "Something went wrong while checking the password")
+		return
+	}
+
+	if !isValid {
+		respondWithError(w, 401, "Incorrect email or password")
+		return
+	}
+
+	body := User{
+		ID: user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		Email: user.Email,
+	}
+
+	respondWithJSON(w, 200, body)
+}
+
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
@@ -316,6 +357,7 @@ func main() {
 	mux.HandleFunc("POST /api/chirps", apiCfg.createChirp)
 
 	mux.HandleFunc("POST /api/users", apiCfg.createUser)
+	mux.HandleFunc("POST /api/login", apiCfg.loginUser)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.writeMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetAll)
