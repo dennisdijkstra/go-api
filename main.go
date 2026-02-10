@@ -15,6 +15,7 @@ import (
 	_ "github.com/lib/pq"
 	"time"
 	"github.com/google/uuid"
+	"github.com/dennisdijkstra/go/internal/auth"
 )
 
 type apiConfig struct {
@@ -37,6 +38,7 @@ type Chirp struct {
 }
 
 type UserParams struct {
+	Password string `json:"password"`
 	Email string `json:"email"`
 }
 
@@ -247,7 +249,16 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user, err := cfg.db.CreateUser(req.Context(), params.Email)
+	hashedPassword, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(w, 500, "Something went wrong while hashing the password")
+		return
+	}
+
+	user, err := cfg.db.CreateUser(req.Context(), database.CreateUserParams{
+		Email: params.Email,
+		HashedPassword: hashedPassword,
+	})
 	if err != nil {
 		respondWithError(w, 500, "Something went wrong while creating the user")
 		return
