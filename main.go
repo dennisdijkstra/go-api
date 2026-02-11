@@ -3,19 +3,19 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"github.com/dennisdijkstra/go/server"
 	"sync/atomic"
 	"encoding/json"
 	"log"
 	"strings"
-	"github.com/joho/godotenv"
 	"database/sql"
 	"os"
-	"github.com/dennisdijkstra/go/internal/database"
-	_ "github.com/lib/pq"
 	"time"
+	"github.com/dennisdijkstra/go/server"
+	"github.com/joho/godotenv"
 	"github.com/google/uuid"
+	"github.com/dennisdijkstra/go/internal/database"
 	"github.com/dennisdijkstra/go/internal/auth"
+	_ "github.com/lib/pq"
 )
 
 type apiConfig struct {
@@ -331,7 +331,6 @@ func main() {
 	defer db.Close()
 
 	dbQueries := database.New(db)
-
 
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
