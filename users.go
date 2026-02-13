@@ -13,6 +13,7 @@ import (
 type UserParams struct {
 	Password string `json:"password"`
 	Email string `json:"email"`
+	ExpiresInSeconds int `json:"expires_in_seconds"`
 }
 
 type User struct {
@@ -20,6 +21,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email string `json:"email"`
+	Token string `json:"token"`
 }
 
 func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
@@ -88,11 +90,24 @@ func (cfg *apiConfig) loginUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	expiresInSeconds := params.ExpiresInSeconds
+	oneHourInSeconds := 3600
+	if expiresInSeconds <= 0 || expiresInSeconds > oneHourInSeconds {
+		expiresInSeconds = oneHourInSeconds
+	}
+
+	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Duration(expiresInSeconds)*time.Second)
+	if err != nil {
+		respondWithError(w, 500, "Something went wrong while creating the JWT")
+		return
+	}
+
 	body := User{
 		ID: user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email: user.Email,
+		Token: token,
 	}
 
 	respondWithJSON(w, 200, body)

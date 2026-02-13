@@ -16,12 +16,14 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	db *database.Queries
 	environment string
+	jwtSecret string
 }
 
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	environment := os.Getenv("ENVIRONMENT")
+	jwtSecret := os.Getenv("JWT_SECRET")
 
 	if dbURL == "" {
         log.Fatal("DB_URL must be set")
@@ -39,6 +41,7 @@ func main() {
 		fileserverHits: atomic.Int32{},
 		db: dbQueries,
 		environment: environment,
+		jwtSecret: jwtSecret,
 	}
 	mux := http.NewServeMux()
 
