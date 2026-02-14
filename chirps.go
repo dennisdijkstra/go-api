@@ -24,7 +24,7 @@ type Chirp struct {
 	UserID uuid.UUID `json:"user_id"`
 }
 
-func (cfg *apiConfig) createChirp(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Request) {
 	bearerToken, err := auth.GetBearerToken(req.Header)
 	if err != nil {
 		respondWithError(w, 401, "Something went wrong while parsing the bearer token")
@@ -73,7 +73,7 @@ func (cfg *apiConfig) createChirp(w http.ResponseWriter, req *http.Request) {
 	respondWithJSON(w, 201, body)
 }
 
-func (cfg *apiConfig) getChirps(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request) {
 	chirps, err := cfg.db.GetChirps(req.Context())
 	if err != nil {
 		respondWithError(w, 500, "Something went wrong while fetching chirps")
@@ -94,7 +94,7 @@ func (cfg *apiConfig) getChirps(w http.ResponseWriter, req *http.Request) {
 	respondWithJSON(w, 200, response)
 }
 
-func (cfg *apiConfig) getChirpByID(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerGetChirpByID(w http.ResponseWriter, req *http.Request) {
 	chirpID := req.PathValue("chirpID")
 	if chirpID == "" {
 		respondWithError(w, 400, "Chirp ID is required")

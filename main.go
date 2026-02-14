@@ -57,15 +57,15 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirpByID)
-	mux.HandleFunc("GET /api/chirps", apiCfg.getChirps)
-	mux.HandleFunc("POST /api/chirps", apiCfg.createChirp)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirpByID)
+	mux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
+	mux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
 
-	mux.HandleFunc("POST /api/users", apiCfg.createUser)
-	mux.HandleFunc("POST /api/login", apiCfg.loginUser)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
+	mux.HandleFunc("POST /api/login", apiCfg.handlerLoginUser)
 
-	mux.HandleFunc("GET /admin/metrics", apiCfg.writeMetrics)
-	mux.HandleFunc("POST /admin/reset", apiCfg.resetAll)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerWriteMetrics)
+	mux.HandleFunc("POST /admin/reset", apiCfg.handlerResetAll)
 
 	httpServer := &http.Server{
 		Addr: ":8080",

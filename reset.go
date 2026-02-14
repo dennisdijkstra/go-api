@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func (cfg *apiConfig) resetAll(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerResetAll(w http.ResponseWriter, req *http.Request) {
 	if cfg.environment != "dev" {
 		respondWithError(w, 403, "Forbidden")
 		return

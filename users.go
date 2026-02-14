@@ -24,7 +24,7 @@ type User struct {
 	Token string `json:"token"`
 }
 
-func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	params := UserParams{}
 	err := decoder.Decode(&params)
@@ -59,7 +59,7 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 	respondWithJSON(w, 201, body)
 }
 
-func (cfg *apiConfig) loginUser(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	params := UserParams{}
 	err := decoder.Decode(&params)
