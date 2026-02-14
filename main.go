@@ -48,8 +48,8 @@ func main() {
 	fs := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(fs))
 
-	mux.HandleFunc("/api/get", server.HandleGet)
-	mux.HandleFunc("/api/post", server.HandlePost)
+	mux.HandleFunc("/api/get", server.HandlerGet)
+	mux.HandleFunc("/api/post", server.HandlerPost)
 
 	mux.HandleFunc("GET /api/healthz", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")

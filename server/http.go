@@ -5,10 +5,10 @@ import (
 	"net/http"
 )
 
-func HandleGet(w http.ResponseWriter, req *http.Request) {
+func HandlerGet(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "get")
 }
 
-func HandlePost(w http.ResponseWriter, req *http.Request) {
+func HandlerPost(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "post")
 }
