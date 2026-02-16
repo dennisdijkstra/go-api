@@ -6,14 +6,14 @@ import (
 
 func (cfg *apiConfig) handlerResetAll(w http.ResponseWriter, req *http.Request) {
 	if cfg.environment != "dev" {
-		respondWithError(w, 403, "Forbidden")
+		respondWithError(w, http.StatusForbidden, "Forbidden")
 		return
 	}
 
 	cfg.fileserverHits.Store(0)
 	err := cfg.db.DeleteUsers(req.Context())
 	if err != nil {
-		respondWithError(w, 500, "Something went wrong while resetting the database")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while resetting the database")
 		return
 	}
 

@@ -28,12 +28,12 @@ type Chirp struct {
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Request) {
 	bearerToken, err := auth.GetBearerToken(req.Header)
 	if err != nil {
-		respondWithError(w, 401, "Something went wrong while parsing the bearer token")
+		respondWithError(w, http.StatusUnauthorized, "Something went wrong while parsing the bearer token")
 		return
 	}
 	userID, err := auth.ValidateJWT(bearerToken, cfg.jwtSecret)
 	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -42,13 +42,13 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Reques
 	err = decoder.Decode(&params)
 
 	if err != nil {
-		respondWithError(w, 400, "Something went wrong while decoding the request body")
+		respondWithError(w, http.StatusBadRequest, "Something went wrong while decoding the request body")
 		return
 	}
 
 	maxLength := 140
 	if len(params.Body) > maxLength {
-		respondWithError(w, 400, "Chirp is too long")
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 
@@ -59,7 +59,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Reques
 	})
 
 	if err != nil {
-		respondWithError(w, 500, "Something went wrong while creating the chirp")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while creating the chirp")
 		return
 	}
 
@@ -71,13 +71,13 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Reques
 		UserID:    chirp.UserID,
 	}
 
-	respondWithJSON(w, 201, body)
+	respondWithJSON(w, http.StatusCreated, body)
 }
 
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request) {
 	chirps, err := cfg.db.GetChirps(req.Context())
 	if err != nil {
-		respondWithError(w, 500, "Something went wrong while fetching chirps")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while fetching chirps")
 		return
 	}
 
@@ -92,23 +92,23 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request)
 		})
 	}
 
-	respondWithJSON(w, 200, response)
+	respondWithJSON(w, http.StatusOK, response)
 }
 
 func (cfg *apiConfig) handlerGetChirpByID(w http.ResponseWriter, req *http.Request) {
 	chirpID := req.PathValue("chirpID")
 	if chirpID == "" {
-		respondWithError(w, 400, "Chirp ID is required")
+		respondWithError(w, http.StatusBadRequest, "Chirp ID is required")
 		return
 	}
 
 	chirp, err := cfg.db.GetChirpByID(req.Context(), uuid.MustParse(chirpID))
 	if err != nil {
 		if err == sql.ErrNoRows {
-			respondWithError(w, 404, "Chirp not found")
+			respondWithError(w, http.StatusNotFound, "Chirp not found")
 			return
 		}
-		respondWithError(w, 500, "Something went wrong while fetching the chirp")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while fetching the chirp")
 		return
 	}
 
@@ -120,7 +120,7 @@ func (cfg *apiConfig) handlerGetChirpByID(w http.ResponseWriter, req *http.Reque
 		UserID:    chirp.UserID,
 	}
 
-	respondWithJSON(w, 200, body)
+	respondWithJSON(w, http.StatusOK, body)
 }
 
 func getCleanedBody(body string) string {

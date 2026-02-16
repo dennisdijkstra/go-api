@@ -31,13 +31,13 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 	err := decoder.Decode(&params)
 
 	if err != nil {
-		respondWithError(w, 400, "Something went wrong")
+		respondWithError(w, http.StatusBadRequest, "Something went wrong")
 		return
 	}
 
 	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
-		respondWithError(w, 500, "Something went wrong while hashing the password")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while hashing the password")
 		return
 	}
 
@@ -46,7 +46,7 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 		HashedPassword: hashedPassword,
 	})
 	if err != nil {
-		respondWithError(w, 500, "Something went wrong while creating the user")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while creating the user")
 		return
 	}
 
@@ -57,7 +57,7 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 		Email:     user.Email,
 	}
 
-	respondWithJSON(w, 201, body)
+	respondWithJSON(w, http.StatusCreated, body)
 }
 
 func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request) {
@@ -66,40 +66,40 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 	err := decoder.Decode(&params)
 
 	if err != nil {
-		respondWithError(w, 400, "Something went wrong")
+		respondWithError(w, http.StatusBadRequest, "Something went wrong")
 		return
 	}
 
 	user, err := cfg.db.GetUserByEmail(req.Context(), params.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			respondWithError(w, 401, "Incorrect email or password")
+			respondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
 			return
 		}
-		respondWithError(w, 500, "Something went wrong while fetching the user")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while fetching the user")
 		return
 	}
 
 	isValid, err := auth.CheckPasswordHash(params.Password, user.HashedPassword)
 	if err != nil {
-		respondWithError(w, 500, "Something went wrong while checking the password")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while checking the password")
 		return
 	}
 
 	if !isValid {
-		respondWithError(w, 401, "Incorrect email or password")
+		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
 		return
 	}
 
 	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Hour)
 	if err != nil {
-		respondWithError(w, 500, "Something went wrong while creating the JWT")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while creating the JWT")
 		return
 	}
 
 	refreshToken, err := auth.MakeRefreshToken()
 	if err != nil {
-		respondWithError(w, 500, "")
+		respondWithError(w, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -109,7 +109,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
 	})
 	if err != nil {
-		respondWithError(w, 500, "Something went wrong while creating the user")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while creating the user")
 		return
 	}
 
@@ -122,18 +122,18 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 		RefreshToken: refreshToken,
 	}
 
-	respondWithJSON(w, 200, body)
+	respondWithJSON(w, http.StatusOK, body)
 }
 
 func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, req *http.Request) {
 	bearerToken, err := auth.GetBearerToken(req.Header)
 	if err != nil {
-		respondWithError(w, 401, "Something went wrong while parsing the bearer token")
+		respondWithError(w, http.StatusUnauthorized, "Something went wrong while parsing the bearer token")
 		return
 	}
 	userID, err := auth.ValidateJWT(bearerToken, cfg.jwtSecret)
 	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -142,13 +142,13 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, req *http.Request
 	err = decoder.Decode(&params)
 
 	if err != nil {
-		respondWithError(w, 400, "Something went wrong while decoding the request body")
+		respondWithError(w, http.StatusBadRequest, "Something went wrong while decoding the request body")
 		return
 	}
 
 	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
-		respondWithError(w, 500, "Something went wrong while hashing the password")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while hashing the password")
 		return
 	}
 
@@ -158,7 +158,7 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, req *http.Request
 		HashedPassword: hashedPassword,
 	})
 	if err != nil {
-		respondWithError(w, 500, "Something went wrong while updating the user")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while updating the user")
 		return
 	}
 
@@ -169,5 +169,5 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, req *http.Request
 		Email:     user.Email,
 	}
 
-	respondWithJSON(w, 200, body)
+	respondWithJSON(w, http.StatusOK, body)
 }
