@@ -9,7 +9,7 @@ func (cfg *apiConfig) handlerResetAll(w http.ResponseWriter, req *http.Request) 
 		respondWithError(w, 403, "Forbidden")
 		return
 	}
-	
+
 	cfg.fileserverHits.Store(0)
 	err := cfg.db.DeleteUsers(req.Context())
 	if err != nil {

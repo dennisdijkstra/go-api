@@ -1,27 +1,28 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strings"
-	"database/sql"
 	"time"
-	"github.com/google/uuid"
-	"github.com/dennisdijkstra/go/internal/database"
+
 	"github.com/dennisdijkstra/go/internal/auth"
+	"github.com/dennisdijkstra/go/internal/database"
+	"github.com/google/uuid"
 )
 
 type ChirpParams struct {
-	Body string `json:"body"`
+	Body   string    `json:"body"`
 	UserID uuid.UUID `json:"user_id"`
 }
 
 type Chirp struct {
-	ID uuid.UUID `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	Body string `json:"body"`
-	UserID uuid.UUID `json:"user_id"`
+	Body      string    `json:"body"`
+	UserID    uuid.UUID `json:"user_id"`
 }
 
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Request) {
@@ -53,21 +54,21 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Reques
 
 	cleanedBody := getCleanedBody(params.Body)
 	chirp, err := cfg.db.CreateChirp(req.Context(), database.CreateChirpParams{
-		Body: cleanedBody,
+		Body:   cleanedBody,
 		UserID: userID,
 	})
 
 	if err != nil {
-		respondWithError(w, 500, "Something went wrong while creating the chirp")	
+		respondWithError(w, 500, "Something went wrong while creating the chirp")
 		return
 	}
 
 	body := Chirp{
-		ID: chirp.ID,
+		ID:        chirp.ID,
 		CreatedAt: chirp.CreatedAt,
 		UpdatedAt: chirp.UpdatedAt,
-		Body: chirp.Body,
-		UserID: chirp.UserID,
+		Body:      chirp.Body,
+		UserID:    chirp.UserID,
 	}
 
 	respondWithJSON(w, 201, body)
@@ -83,11 +84,11 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request)
 	response := make([]Chirp, 0, len(chirps))
 	for _, chirp := range chirps {
 		response = append(response, Chirp{
-			ID: chirp.ID,
+			ID:        chirp.ID,
 			CreatedAt: chirp.CreatedAt,
 			UpdatedAt: chirp.UpdatedAt,
-			Body: chirp.Body,
-			UserID: chirp.UserID,
+			Body:      chirp.Body,
+			UserID:    chirp.UserID,
 		})
 	}
 
@@ -112,11 +113,11 @@ func (cfg *apiConfig) handlerGetChirpByID(w http.ResponseWriter, req *http.Reque
 	}
 
 	body := Chirp{
-		ID: chirp.ID,
+		ID:        chirp.ID,
 		CreatedAt: chirp.CreatedAt,
 		UpdatedAt: chirp.UpdatedAt,
-		Body: chirp.Body,
-		UserID: chirp.UserID,
+		Body:      chirp.Body,
+		UserID:    chirp.UserID,
 	}
 
 	respondWithJSON(w, 200, body)
@@ -126,7 +127,7 @@ func getCleanedBody(body string) string {
 	profanities := []string{"kerfuffle", "sharbert", "fornax"}
 	words := strings.Split(body, " ")
 	cleanedMessage := make([]string, 0, len(words))
-	
+
 	for _, word := range words {
 		isProfane := false
 

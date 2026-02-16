@@ -1,22 +1,23 @@
 package main
 
 import (
-	"net/http"
-	"sync/atomic"
-	"log"
 	"database/sql"
+	"log"
+	"net/http"
 	"os"
+	"sync/atomic"
+
+	"github.com/dennisdijkstra/go/internal/database"
 	"github.com/dennisdijkstra/go/server"
 	"github.com/joho/godotenv"
-	"github.com/dennisdijkstra/go/internal/database"
 	_ "github.com/lib/pq"
 )
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
-	db *database.Queries
-	environment string
-	jwtSecret string
+	db             *database.Queries
+	environment    string
+	jwtSecret      string
 }
 
 func main() {
@@ -26,8 +27,8 @@ func main() {
 	jwtSecret := os.Getenv("JWT_SECRET")
 
 	if dbURL == "" {
-        log.Fatal("DB_URL must be set")
-    }
+		log.Fatal("DB_URL must be set")
+	}
 
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -39,9 +40,9 @@ func main() {
 
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
-		db: dbQueries,
-		environment: environment,
-		jwtSecret: jwtSecret,
+		db:             dbQueries,
+		environment:    environment,
+		jwtSecret:      jwtSecret,
 	}
 	mux := http.NewServeMux()
 
@@ -68,7 +69,7 @@ func main() {
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerResetAll)
 
 	httpServer := &http.Server{
-		Addr: ":8080",
+		Addr:    ":8080",
 		Handler: mux,
 	}
 	httpServer.ListenAndServe()

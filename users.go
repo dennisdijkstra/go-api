@@ -1,27 +1,28 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
-	"database/sql"
 	"time"
-	"github.com/google/uuid"
-	"github.com/dennisdijkstra/go/internal/database"
+
 	"github.com/dennisdijkstra/go/internal/auth"
+	"github.com/dennisdijkstra/go/internal/database"
+	"github.com/google/uuid"
 )
 
 type UserParams struct {
-	Password string `json:"password"`
-	Email string `json:"email"`
-	ExpiresInSeconds int `json:"expires_in_seconds"`
+	Password         string `json:"password"`
+	Email            string `json:"email"`
+	ExpiresInSeconds int    `json:"expires_in_seconds"`
 }
 
 type User struct {
-	ID uuid.UUID `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	Email string `json:"email"`
-	Token string `json:"token"`
+	Email     string    `json:"email"`
+	Token     string    `json:"token"`
 }
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request) {
@@ -41,19 +42,19 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 	}
 
 	user, err := cfg.db.CreateUser(req.Context(), database.CreateUserParams{
-		Email: params.Email,
+		Email:          params.Email,
 		HashedPassword: hashedPassword,
 	})
 	if err != nil {
 		respondWithError(w, 500, "Something went wrong while creating the user")
 		return
 	}
-	
+
 	body := User{
-		ID: user.ID,
+		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
-		Email: user.Email,
+		Email:     user.Email,
 	}
 
 	respondWithJSON(w, 201, body)
@@ -103,11 +104,11 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 	}
 
 	body := User{
-		ID: user.ID,
+		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
-		Email: user.Email,
-		Token: token,
+		Email:     user.Email,
+		Token:     token,
 	}
 
 	respondWithJSON(w, 200, body)

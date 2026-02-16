@@ -1,9 +1,10 @@
 package auth
 
 import (
-    "testing"
-	"github.com/google/uuid"
+	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestJWT(t *testing.T) {
@@ -15,10 +16,10 @@ func TestJWT(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to make JWT: %v", err)
 	}
-    
+
 	if JWTtoken == "" {
-        t.Fatal("expected a non-empty token string")
-    }
+		t.Fatal("expected a non-empty token string")
+	}
 
 	verifiedID, err := ValidateJWT(JWTtoken, tokenSecret)
 	if err != nil {
