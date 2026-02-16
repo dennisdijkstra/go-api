@@ -12,17 +12,17 @@ import (
 )
 
 type UserParams struct {
-	Password         string `json:"password"`
-	Email            string `json:"email"`
-	ExpiresInSeconds int    `json:"expires_in_seconds"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
 }
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Token     string    `json:"token"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Token        string    `json:"token"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request) {
@@ -91,24 +91,35 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	expiresInSeconds := params.ExpiresInSeconds
-	oneHourInSeconds := 3600
-	if expiresInSeconds <= 0 || expiresInSeconds > oneHourInSeconds {
-		expiresInSeconds = oneHourInSeconds
-	}
-
-	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Duration(expiresInSeconds)*time.Second)
+	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Hour)
 	if err != nil {
 		respondWithError(w, 500, "Something went wrong while creating the JWT")
 		return
 	}
 
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, 500, "")
+		return
+	}
+
+	_, err = cfg.db.CreateRefreshToken(req.Context(), database.CreateRefreshTokenParams{
+		Token:     refreshToken,
+		UserID:    user.ID,
+		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
+	})
+	if err != nil {
+		respondWithError(w, 500, "Something went wrong while creating the user")
+		return
+	}
+
 	body := User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
-		Token:     token,
+		ID:           user.ID,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
+		Email:        user.Email,
+		Token:        token,
+		RefreshToken: refreshToken,
 	}
 
 	respondWithJSON(w, 200, body)
