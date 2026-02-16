@@ -102,7 +102,13 @@ func (cfg *apiConfig) handlerGetChirpByID(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	chirp, err := cfg.db.GetChirpByID(req.Context(), uuid.MustParse(chirpID))
+	chirpUUID, err := uuid.Parse(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid chirp ID")
+		return
+	}
+
+	chirp, err := cfg.db.GetChirpByID(req.Context(), chirpUUID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			respondWithError(w, http.StatusNotFound, "Chirp not found")
@@ -121,6 +127,55 @@ func (cfg *apiConfig) handlerGetChirpByID(w http.ResponseWriter, req *http.Reque
 	}
 
 	respondWithJSON(w, http.StatusOK, body)
+}
+
+func (cfg *apiConfig) handlerDeleteChirpByID(w http.ResponseWriter, req *http.Request) {
+	chirpID := req.PathValue("chirpID")
+	if chirpID == "" {
+		respondWithError(w, http.StatusBadRequest, "Chirp ID is required")
+		return
+	}
+
+	bearerToken, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Something went wrong while parsing the bearer token")
+		return
+	}
+
+	userID, err := auth.ValidateJWT(bearerToken, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	chirpUUID, err := uuid.Parse(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid chirp ID")
+		return
+	}
+
+	chirp, err := cfg.db.GetChirpByID(req.Context(), chirpUUID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			respondWithError(w, http.StatusNotFound, "Chirp not found")
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while fetching the chirp")
+		return
+	}
+
+	if chirp.UserID != userID {
+		respondWithError(w, http.StatusForbidden, "You are not allowed to delete this chirp")
+		return
+	}
+
+	err = cfg.db.DeleteChirpByID(req.Context(), chirpUUID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while deleting the chirp")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func getCleanedBody(body string) string {
