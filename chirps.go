@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -80,6 +81,7 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request)
 	var err error
 
 	authorIDQuery := req.URL.Query().Get("author_id")
+	sortQuery := req.URL.Query().Get("sort")
 
 	if authorIDQuery != "" {
 		authorID, err = uuid.Parse(authorIDQuery)
@@ -113,6 +115,13 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request)
 			UserID:    chirp.UserID,
 		})
 	}
+
+	sort.Slice(response, func(i, j int) bool {
+		if sortQuery == "desc" {
+			return response[i].CreatedAt.After(response[j].CreatedAt)
+		}
+		return response[i].CreatedAt.Before(response[j].CreatedAt)
+	})
 
 	respondWithJSON(w, http.StatusOK, response)
 }
