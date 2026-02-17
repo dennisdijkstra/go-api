@@ -25,6 +25,11 @@ func main() {
 	dbURL := os.Getenv("DB_URL")
 	environment := os.Getenv("ENVIRONMENT")
 	jwtSecret := os.Getenv("JWT_SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
+
+	if polkaKey == "" {
+		log.Fatal("POLKA_KEY must be set")
+	}
 
 	if dbURL == "" {
 		log.Fatal("DB_URL must be set")

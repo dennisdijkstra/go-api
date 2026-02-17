@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 
+	"github.com/dennisdijkstra/go/internal/auth"
 	"github.com/dennisdijkstra/go/internal/database"
 	"github.com/google/uuid"
 )
@@ -18,9 +20,20 @@ type WebhookParams struct {
 }
 
 func (cfg *apiConfig) handlerPolkaWebhook(w http.ResponseWriter, req *http.Request) {
+	apiKey, err := auth.GetAPIKey(req.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if apiKey != os.Getenv("POLKA_KEY") {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
 	decoder := json.NewDecoder(req.Body)
 	params := WebhookParams{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Something went wrong")
