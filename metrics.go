@@ -12,7 +12,7 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	})
 }
 
-func (cfg *apiConfig) handlerWriteMetrics(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerWriteMetrics(w http.ResponseWriter, r *http.Request) {
 	numberOfRequests := cfg.fileserverHits.Load()
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	template := fmt.Sprintf(`

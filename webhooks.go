@@ -19,8 +19,8 @@ type WebhookParams struct {
 	} `json:"data"`
 }
 
-func (cfg *apiConfig) handlerPolkaWebhook(w http.ResponseWriter, req *http.Request) {
-	apiKey, err := auth.GetAPIKey(req.Header)
+func (cfg *apiConfig) handlerPolkaWebhook(w http.ResponseWriter, r *http.Request) {
+	apiKey, err := auth.GetAPIKey(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
 		return
@@ -31,7 +31,7 @@ func (cfg *apiConfig) handlerPolkaWebhook(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	decoder := json.NewDecoder(req.Body)
+	decoder := json.NewDecoder(r.Body)
 	params := WebhookParams{}
 	err = decoder.Decode(&params)
 
@@ -45,7 +45,7 @@ func (cfg *apiConfig) handlerPolkaWebhook(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	_, err = cfg.db.UpdateUserIsChirpyRed(req.Context(), database.UpdateUserIsChirpyRedParams{
+	_, err = cfg.db.UpdateUserIsChirpyRed(r.Context(), database.UpdateUserIsChirpyRedParams{
 		ID:          params.Data.UserID,
 		IsChirpyRed: true,
 	})

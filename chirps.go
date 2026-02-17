@@ -26,8 +26,8 @@ type Chirp struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
-func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Request) {
-	bearerToken, err := auth.GetBearerToken(req.Header)
+func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
+	bearerToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Something went wrong while parsing the bearer token")
 		return
@@ -38,7 +38,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	decoder := json.NewDecoder(req.Body)
+	decoder := json.NewDecoder(r.Body)
 	params := ChirpParams{}
 	err = decoder.Decode(&params)
 
@@ -54,7 +54,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Reques
 	}
 
 	cleanedBody := getCleanedBody(params.Body)
-	chirp, err := cfg.db.CreateChirp(req.Context(), database.CreateChirpParams{
+	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   cleanedBody,
 		UserID: userID,
 	})
@@ -75,13 +75,13 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Reques
 	respondWithJSON(w, http.StatusCreated, body)
 }
 
-func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 	var authorID uuid.UUID
 	var chirps []database.Chirp
 	var err error
 
-	authorIDQuery := req.URL.Query().Get("author_id")
-	sortQuery := req.URL.Query().Get("sort")
+	authorIDQuery := r.URL.Query().Get("author_id")
+	sortQuery := r.URL.Query().Get("sort")
 
 	if authorIDQuery != "" {
 		authorID, err = uuid.Parse(authorIDQuery)
@@ -92,13 +92,13 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request)
 	}
 
 	if authorID != uuid.Nil {
-		chirps, err = cfg.db.GetChirpsByAuthorID(req.Context(), authorID)
+		chirps, err = cfg.db.GetChirpsByAuthorID(r.Context(), authorID)
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, "Something went wrong while fetching chirps")
 			return
 		}
 	} else {
-		chirps, err = cfg.db.GetChirps(req.Context())
+		chirps, err = cfg.db.GetChirps(r.Context())
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, "Something went wrong while fetching chirps")
 			return
@@ -126,8 +126,8 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request)
 	respondWithJSON(w, http.StatusOK, response)
 }
 
-func (cfg *apiConfig) handlerGetChirpByID(w http.ResponseWriter, req *http.Request) {
-	chirpID := req.PathValue("chirpID")
+func (cfg *apiConfig) handlerGetChirpByID(w http.ResponseWriter, r *http.Request) {
+	chirpID := r.PathValue("chirpID")
 	if chirpID == "" {
 		respondWithError(w, http.StatusBadRequest, "Chirp ID is required")
 		return
@@ -139,7 +139,7 @@ func (cfg *apiConfig) handlerGetChirpByID(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	chirp, err := cfg.db.GetChirpByID(req.Context(), chirpUUID)
+	chirp, err := cfg.db.GetChirpByID(r.Context(), chirpUUID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			respondWithError(w, http.StatusNotFound, "Chirp not found")
@@ -160,14 +160,14 @@ func (cfg *apiConfig) handlerGetChirpByID(w http.ResponseWriter, req *http.Reque
 	respondWithJSON(w, http.StatusOK, body)
 }
 
-func (cfg *apiConfig) handlerDeleteChirpByID(w http.ResponseWriter, req *http.Request) {
-	chirpID := req.PathValue("chirpID")
+func (cfg *apiConfig) handlerDeleteChirpByID(w http.ResponseWriter, r *http.Request) {
+	chirpID := r.PathValue("chirpID")
 	if chirpID == "" {
 		respondWithError(w, http.StatusBadRequest, "Chirp ID is required")
 		return
 	}
 
-	bearerToken, err := auth.GetBearerToken(req.Header)
+	bearerToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Something went wrong while parsing the bearer token")
 		return
@@ -185,7 +185,7 @@ func (cfg *apiConfig) handlerDeleteChirpByID(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	chirp, err := cfg.db.GetChirpByID(req.Context(), chirpUUID)
+	chirp, err := cfg.db.GetChirpByID(r.Context(), chirpUUID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			respondWithError(w, http.StatusNotFound, "Chirp not found")
@@ -200,7 +200,7 @@ func (cfg *apiConfig) handlerDeleteChirpByID(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	err = cfg.db.DeleteChirpByID(req.Context(), chirpUUID)
+	err = cfg.db.DeleteChirpByID(r.Context(), chirpUUID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Something went wrong while deleting the chirp")
 		return

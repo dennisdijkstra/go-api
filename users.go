@@ -26,8 +26,8 @@ type User struct {
 	IsChirpyRed  bool      `json:"is_chirpy_red"`
 }
 
-func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request) {
-	decoder := json.NewDecoder(req.Body)
+func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
 	params := UserParams{}
 	err := decoder.Decode(&params)
 
@@ -42,7 +42,7 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	user, err := cfg.db.CreateUser(req.Context(), database.CreateUserParams{
+	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
 		Email:          params.Email,
 		HashedPassword: hashedPassword,
 	})
@@ -62,8 +62,8 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request
 	respondWithJSON(w, http.StatusCreated, body)
 }
 
-func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request) {
-	decoder := json.NewDecoder(req.Body)
+func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
 	params := UserParams{}
 	err := decoder.Decode(&params)
 
@@ -72,7 +72,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	user, err := cfg.db.GetUserByEmail(req.Context(), params.Email)
+	user, err := cfg.db.GetUserByEmail(r.Context(), params.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			respondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
@@ -105,7 +105,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	_, err = cfg.db.CreateRefreshToken(req.Context(), database.CreateRefreshTokenParams{
+	_, err = cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
 		Token:     refreshToken,
 		UserID:    user.ID,
 		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
@@ -128,8 +128,8 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, req *http.Request)
 	respondWithJSON(w, http.StatusOK, body)
 }
 
-func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, req *http.Request) {
-	bearerToken, err := auth.GetBearerToken(req.Header)
+func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
+	bearerToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Something went wrong while parsing the bearer token")
 		return
@@ -140,7 +140,7 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	decoder := json.NewDecoder(req.Body)
+	decoder := json.NewDecoder(r.Body)
 	params := UserParams{}
 	err = decoder.Decode(&params)
 
@@ -155,7 +155,7 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	user, err := cfg.db.UpdateUser(req.Context(), database.UpdateUserParams{
+	user, err := cfg.db.UpdateUser(r.Context(), database.UpdateUserParams{
 		ID:             userID,
 		Email:          params.Email,
 		HashedPassword: hashedPassword,
