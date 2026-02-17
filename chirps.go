@@ -75,10 +75,32 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Reques
 }
 
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request) {
-	chirps, err := cfg.db.GetChirps(req.Context())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Something went wrong while fetching chirps")
-		return
+	var authorID uuid.UUID
+	var chirps []database.Chirp
+	var err error
+
+	authorIDQuery := req.URL.Query().Get("author_id")
+
+	if authorIDQuery != "" {
+		authorID, err = uuid.Parse(authorIDQuery)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Invalid author_id")
+			return
+		}
+	}
+
+	if authorID != uuid.Nil {
+		chirps, err = cfg.db.GetChirpsByAuthorID(req.Context(), authorID)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Something went wrong while fetching chirps")
+			return
+		}
+	} else {
+		chirps, err = cfg.db.GetChirps(req.Context())
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Something went wrong while fetching chirps")
+			return
+		}
 	}
 
 	response := make([]Chirp, 0, len(chirps))
