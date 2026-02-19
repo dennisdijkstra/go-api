@@ -129,20 +129,15 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
-	bearerToken, err := auth.GetBearerToken(r.Header)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Something went wrong while parsing the bearer token")
-		return
-	}
-	userID, err := auth.ValidateJWT(bearerToken, cfg.jwtSecret)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+	userID, code, msg, ok := cfg.requireJWTUserID(r)
+	if !ok {
+		respondWithError(w, code, msg)
 		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
 	params := UserParams{}
-	err = decoder.Decode(&params)
+	err := decoder.Decode(&params)
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Something went wrong while decoding the request body")

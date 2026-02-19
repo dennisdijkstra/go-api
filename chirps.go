@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dennisdijkstra/go/internal/auth"
 	"github.com/dennisdijkstra/go/internal/database"
 	"github.com/google/uuid"
 )
@@ -27,20 +26,15 @@ type Chirp struct {
 }
 
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
-	bearerToken, err := auth.GetBearerToken(r.Header)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Something went wrong while parsing the bearer token")
-		return
-	}
-	userID, err := auth.ValidateJWT(bearerToken, cfg.jwtSecret)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+	userID, code, msg, ok := cfg.requireJWTUserID(r)
+	if !ok {
+		respondWithError(w, code, msg)
 		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
 	params := ChirpParams{}
-	err = decoder.Decode(&params)
+	err := decoder.Decode(&params)
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Something went wrong while decoding the request body")
@@ -167,15 +161,9 @@ func (cfg *apiConfig) handlerDeleteChirpByID(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	bearerToken, err := auth.GetBearerToken(r.Header)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Something went wrong while parsing the bearer token")
-		return
-	}
-
-	userID, err := auth.ValidateJWT(bearerToken, cfg.jwtSecret)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+	userID, code, msg, ok := cfg.requireJWTUserID(r)
+	if !ok {
+		respondWithError(w, code, msg)
 		return
 	}
 
