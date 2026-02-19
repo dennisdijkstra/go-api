@@ -101,7 +101,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	refreshToken, err := auth.MakeRefreshToken()
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while making the refresh token")
 		return
 	}
 
@@ -111,7 +111,7 @@ func (cfg *apiConfig) handlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
 	})
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Something went wrong while creating the user")
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong while creating the refresh token")
 		return
 	}
 
