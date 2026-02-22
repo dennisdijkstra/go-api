@@ -1,6 +1,6 @@
 # Go API Project
 
-Simple backend API written in Go with a PostgreSQL database.
+Modern backend API written in Go with a PostgreSQL database.
 
 ## Tech Stack
 
