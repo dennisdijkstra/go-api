@@ -20,9 +20,10 @@ Modern backend API written in Go with a PostgreSQL database.
 ## Getting Started
 
 1. Install Go and PostgreSQL.
-2. Create a PostgreSQL database.
-3. Apply migrations from `sql/schema/`.
-4. Run the app:
+2. Copy `.env.example` to `.env` and fill in the values.
+3. Create a PostgreSQL database.
+4. Apply migrations from `sql/schema/`.
+5. Run the app:
 
 ```bash
 go run .

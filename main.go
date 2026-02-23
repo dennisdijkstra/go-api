@@ -31,6 +31,10 @@ func main() {
 		log.Fatal("POLKA_KEY must be set")
 	}
 
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET must be set")
+	}
+
 	if dbURL == "" {
 		log.Fatal("DB_URL must be set")
 	}
