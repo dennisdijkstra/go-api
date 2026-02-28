@@ -15,7 +15,7 @@ import (
 
 func HashPassword(password string) (string, error) {
 	if password == "" {
-		return "", errors.New("Password cannot be empty")
+		return "", errors.New("password cannot be empty")
 	}
 
 	hash, err := argon2id.CreateHash(password, argon2id.DefaultParams)
@@ -28,7 +28,7 @@ func HashPassword(password string) (string, error) {
 
 func CheckPasswordHash(password, hash string) (bool, error) {
 	if password == "" || hash == "" {
-		return false, errors.New("Password and/or hash cannot be empty")
+		return false, errors.New("password and/or hash cannot be empty")
 	}
 
 	isMatch, err := argon2id.ComparePasswordAndHash(password, hash)
@@ -67,16 +67,16 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 
 	_, ok := token.Method.(*jwt.SigningMethodHMAC)
 	if !ok || token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-		return uuid.Nil, errors.New("Invalid signing method")
+		return uuid.Nil, errors.New("invalid signing method")
 	}
 
 	claims, ok := token.Claims.(*jwt.RegisteredClaims)
 	if !ok {
-		return uuid.Nil, errors.New("Invalid JWT claims: expected *jwt.RegisteredClaims")
+		return uuid.Nil, errors.New("invalid JWT claims: expected *jwt.RegisteredClaims")
 	}
 
 	if !token.Valid {
-		return uuid.Nil, errors.New("Token not valid")
+		return uuid.Nil, errors.New("token not valid")
 	}
 
 	id, err := uuid.Parse(claims.Subject)
@@ -90,7 +90,7 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 func GetBearerToken(headers http.Header) (string, error) {
 	authHeader := headers.Get("Authorization")
 	if authHeader == "" {
-		return "", errors.New("Authorization header missing")
+		return "", errors.New("authorization header missing")
 	}
 
 	if !strings.HasPrefix(authHeader, "Bearer ") {
@@ -99,7 +99,7 @@ func GetBearerToken(headers http.Header) (string, error) {
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 	if tokenString == "" {
-		return "", errors.New("Bearer token missing")
+		return "", errors.New("bearer token missing")
 	}
 
 	return tokenString, nil
@@ -120,7 +120,7 @@ func MakeRefreshToken() (string, error) {
 func GetAPIKey(headers http.Header) (string, error) {
 	authHeader := headers.Get("Authorization")
 	if authHeader == "" {
-		return "", errors.New("Authorization header missing")
+		return "", errors.New("authorization header missing")
 	}
 
 	if !strings.HasPrefix(authHeader, "ApiKey ") {
@@ -129,7 +129,7 @@ func GetAPIKey(headers http.Header) (string, error) {
 
 	apiKey := strings.TrimPrefix(authHeader, "ApiKey ")
 	if apiKey == "" {
-		return "", errors.New("API key missing")
+		return "", errors.New("api key missing")
 	}
 
 	return apiKey, nil
