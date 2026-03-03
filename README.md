@@ -33,3 +33,9 @@ go run .
 
 - Generate/update database code with SQLC after changing SQL queries or schema.
 - Keep API handlers in the root files grouped by feature (users, chirps, auth, tokens, webhooks).
+
+
+## Motivation
+## Quick Start
+## Usage
+## Contributing
